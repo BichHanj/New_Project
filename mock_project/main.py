@@ -1,24 +1,44 @@
 import gradio as gr
 import pandas as pd
 
-# Hàm get_data mẫu
-def get_data(input_text):
-    # Xử lý dữ liệu tùy thuộc vào input_text
-    # ...
+with gr.Blocks() as demo:
+    error_box = gr.Textbox(label="Error", visible=False)
 
-    # Trả về một DataFrame với các cột tùy chọn
-    custom_columns = ['column1', 'column2']  # Thay thế bằng tên các cột bạn muốn
-    data = {'column1': ['value1', 'value2'],
-            'column2': ['value3', 'value4']}  # Thay thế bằng dữ liệu thực tế
+    keyword_box = gr.Textbox(label="Search Text")
+    submit_btn = gr.Button("Search")
 
-    return pd.DataFrame(data, columns=custom_columns)
+    with gr.Column(visible=False) as output_col:
+        links_table = gr.Dataframe()  # Thay đổi từ gr.HTML sang gr.Dataframe()
+        links_table.style = "compact"
+        
+    def submit(keyword):
+        if len(keyword) == 0:
+            return {error_box: gr.Textbox(value="Search Text", visible=True)}
+        
+        links = []
+        if "gradio_learn" in keyword:
+            links.append({"kết quả": "https://www.gradio.app/custom-components/gallery"})
+            links.append({"kết quả": "https://www.gradio.app/docs/chatinterface/"})
+        if "gradio_example" in keyword:
+            links.append({"kết quả": "https://www.gradio.app/docs/chatinterface/"})
+        if "gradio_quick_start" in keyword:
+            links.append({"kết quả": "https://www.gradio.app/docs/interface#interface-queue-example-usage"})
 
-# Tạo Gradio Interface
-iface = gr.Interface(
-    fn=get_data,
-    inputs=gr.Textbox(),
-    outputs=gr.Dataframe()  # Chú ý: Dataframe, không phải Dataframe()
-)
+        # Tạo DataFrame từ danh sách liên kết
+        df = pd.DataFrame(links)
 
-# Chạy Gradio Interface
-iface.launch()
+        # Chuyển DataFrame thành gr.Dataframe để hiển thị
+        links_table.value = df if not df.empty else pd.DataFrame()
+
+        return {
+            output_col: gr.Column(visible=True),
+            links_table: links_table.value,
+        }
+
+    submit_btn.click(
+        submit,
+        [keyword_box],
+        [error_box, links_table, output_col],
+    )
+
+demo.launch()
